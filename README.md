@@ -1,5 +1,4 @@
 IAT355 Final Project
-==================
 
 Visual Analytics Project prepared for IAT355 Introduction to Visual Analytics.
 Simon Fraser University

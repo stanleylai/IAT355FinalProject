@@ -76,9 +76,9 @@ void draw() {
   map.draw();
   
   // Display co-ordinates at mouse
-  Location location = map.getLocation(mouseX, mouseY);
+  Location pointerLoc = map.getLocation(mouseX, mouseY);
   fill(255);
-  text(location.getLat() + ", " + location.getLon(), mouseX, mouseY);
+  text(pointerLoc.getLat() + ", " + pointerLoc.getLon(), mouseX, mouseY);
 }
 
 
