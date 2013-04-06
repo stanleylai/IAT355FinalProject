@@ -147,20 +147,33 @@ void processAchieveSurveyData(String[] file) {
   int qForEachSchool = 4; // how many survey questions are there for each school?
   int schoolNumberColumn = searchForColumnName("SCHOOL_NUMBER", columnNames);
   int valueColumn = searchForColumnName("MANY_OR_ALL_PCT", columnNames);
-  
-  println(schoolNumberColumn);
-  println(valueColumn);
-  
-  // iterate through input data and populate School object
+    
+  // begin iterating through array of School objects
   for (int i=0; i < schools.length; i++) {
     int workingSchoolNumber = schools[i].getSchoolNumber();
     int valueTotal = 0;
+    boolean foundMsk = false;
     
+    // iterate through each row of input file information
     for (int j=1; j < file.length; j++) {
       String[] row = split(file[j], ",");
-      if (int(row[schoolNumberColumn]) == workingSchoolNumber) valueTotal += int(row[valueColumn]);
+      
+      // check if file's school number matches current school
+      if (int(row[schoolNumberColumn]) == workingSchoolNumber) { 
+        // check if "Msk" is found
+        if (match(row[valueColumn], "Msk") != null) {
+          foundMsk = true;
+        } else {
+          // if Msk not found, proceed with addition
+          valueTotal += int(row[valueColumn]);
+        }
+      }
+      
+      // if "Msk" found, skip this school
+      if (foundMsk) break;
     }
     
+    // populate School object with average of achievement survey scores
     schools[i].setAchievementValue(valueTotal/qForEachSchool);
   }
 }
