@@ -26,11 +26,15 @@ private Location location;
 // marker data
 SimplePointMarker marker;
 
+// HashMap
+HashMap hm;
+
 
 /* ==================================================
  * Constructor Method
  * ================================================== */
 School(String name, int number, float lat, float lon) {
+  hm = new HashMap();
   setSchoolName(name);
   setSchoolNumber(number);
   setLocation(lat, lon);
@@ -43,11 +47,17 @@ School(String name, int number, float lat, float lon) {
  * Rendering Methods
  * ================================================== */
 public void addMarkerTo(UnfoldingMap map) {
+  hm.put("NAME", getSchoolName());
+  hm.put("NUMBER", getSchoolNumber());
+  hm.put("LOCATION", getLocation());
+  hm.put("ACHIEVEMENT", getAchievementValue());
+  
+  marker.setProperties(hm);
   map.addMarkers(marker);
 }
- 
- 
- 
+
+
+
 /* ==================================================
  * Getter & Setter Methods
  * ================================================== */

@@ -9,6 +9,9 @@
 /* ==================================================
  * Imports
  * ================================================== */
+// Java
+import java.util.Map;
+
 // Unfolding for Processing
 import de.fhpotsdam.unfolding.mapdisplay.*;
 import de.fhpotsdam.unfolding.utils.*;
@@ -52,6 +55,9 @@ School[] schools;
  * Setup Method
  * ================================================== */
 void setup() {
+  // Load up screen
+  size(1280, 700, GLConstants.GLGRAPHICS);
+  
   // Load and crunch CSV file
   schoolInfoDataFile = loadStrings("BCSchoolInfo_10012012.csv");
   achievementSurveyDataFile = loadStrings("AchievementCombinedParentsCurr.csv");
@@ -59,13 +65,12 @@ void setup() {
   processAchieveSurveyData(achievementSurveyDataFile);
 
   // Init Unfolding Map
-  size(1280, 700, GLConstants.GLGRAPHICS);
   map = new UnfoldingMap(this, new OpenStreetMap.CloudmadeProvider("dcd2157d99f04bbf97922278fd9584b8", 998));
   map.zoomAndPanTo(new Location(49.21, -122.9), 11); // Position map at Vancouver
   MapUtils.createDefaultEventDispatcher(this, map); // Enable basic user interactions
   map.setTweening(true); // Animate all map movements
   
-  // Draw school markers
+  // Draw school markers. Should always be the last statement, since School class needs to be fully populated with data first
   addSchoolMarkers();
 }
 
@@ -78,10 +83,16 @@ void draw() {
   // Redraw Unfolding Map
   map.draw();
   
+  /*
   // Display co-ordinates at mouse
   Location pointerLoc = map.getLocation(mouseX, mouseY);
   fill(255);
   text(pointerLoc.getLat() + ", " + pointerLoc.getLon(), mouseX, mouseY);
+  */
+  
+  for (Marker m : map.getMarkers()) {
+    updateMarker(m);
+  }
 }
 
 
@@ -111,6 +122,14 @@ void mouseMoved() {
 void addSchoolMarkers() {
   for (int i=0; i < schools.length; i++) {
     schools[i].addMarkerTo(map);
+  }
+}
+
+// Update markers
+void updateMarker(Marker m) {
+  if(m.isSelected()) {
+    fill(255);
+    text(m.getProperties().get("NAME").toString(), mouseX, mouseY);
   }
 }
  
