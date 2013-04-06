@@ -18,6 +18,7 @@ class School {
 // basic info
 private String name;
 private int schoolNumber;
+private int achievementSurvey;
 
 // location data
 private Location location;
@@ -63,6 +64,10 @@ public void setLocation(float lat, float lon) { location = new Location(lat, lon
 public Location getLocation() { return location; };
 public float getLocationLon() { return location.getLon(); };
 public float getLocationLat() { return location.getLat(); };
+
+// Achievement Survey
+public void setAchievementValue(int i) { achievementSurvey = i; };
+public int getAchievementValue() { return achievementSurvey; };
 
 // SimplePointMarker
 public SimplePointMarker getPointMarker() { return marker; };

@@ -42,6 +42,7 @@ UnfoldingMap map;
 
 // Data Files
 String[] schoolInfoDataFile;
+String[] achievementSurveyDataFile;
 
 // Array of School objects
 School[] schools;
@@ -53,7 +54,9 @@ School[] schools;
 void setup() {
   // Load and crunch CSV file
   schoolInfoDataFile = loadStrings("BCSchoolInfo_10012012.csv");
-  processData(schoolInfoDataFile);
+  achievementSurveyDataFile = loadStrings("AchievementCombinedParentsCurr.csv");
+  processSchoolInfoData(schoolInfoDataFile);
+  processAchieveSurveyData(achievementSurveyDataFile);
 
   // Init Unfolding Map
   size(1280, 700, GLConstants.GLGRAPHICS);
@@ -116,7 +119,8 @@ void addSchoolMarkers() {
 /* ==================================================
  * Data Processing Methods
  * ================================================== */
-void processData(String[] file) {
+// Process school info by creating school objects based on provided info
+void processSchoolInfoData(String[] file) {
   schools = new School[file.length-1];
   
   String[] columnNames = split(file[0], ",");
@@ -124,11 +128,6 @@ void processData(String[] file) {
   int schoolNumberColumn = searchForColumnName("SCHOOL_NUMBER", columnNames);
   int latColumn = searchForColumnName("SCHOOL_LATITUDE", columnNames);
   int lonColumn = searchForColumnName("SCHOOL_LONGITUDE", columnNames);
-  
-  println(nameColumn);
-  println(schoolNumberColumn);
-  println(latColumn);
-  println(lonColumn);
   
   // iterate through input data and populate School object
   for (int i=1; i < file.length; i++) {
@@ -138,6 +137,31 @@ void processData(String[] file) {
                               float(row[latColumn]),
                               float(row[lonColumn])
                               );
+  }
+}
+
+// Search achievement survey data and populate school objects with matched info
+void processAchieveSurveyData(String[] file) {
+  String[] columnNames = split(file[0], ",");
+  
+  int qForEachSchool = 4; // how many survey questions are there for each school?
+  int schoolNumberColumn = searchForColumnName("SCHOOL_NUMBER", columnNames);
+  int valueColumn = searchForColumnName("MANY_OR_ALL_PCT", columnNames);
+  
+  println(schoolNumberColumn);
+  println(valueColumn);
+  
+  // iterate through input data and populate School object
+  for (int i=0; i < schools.length; i++) {
+    int workingSchoolNumber = schools[i].getSchoolNumber();
+    int valueTotal = 0;
+    
+    for (int j=1; j < file.length; j++) {
+      String[] row = split(file[j], ",");
+      if (int(row[schoolNumberColumn]) == workingSchoolNumber) valueTotal += int(row[valueColumn]);
+    }
+    
+    schools[i].setAchievementValue(valueTotal/qForEachSchool);
   }
 }
 
