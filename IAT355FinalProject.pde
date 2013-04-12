@@ -1,6 +1,8 @@
 /* ==================================================
  * IAT355 Spring 2013 - Final Project
- * April 4, 2013
+ * April 11, 2013
+ *
+ * Version 2.0
  *
  * Stanley Lai Zhen-Yu (zlai)
  * Ooi Yee Loong
@@ -46,6 +48,7 @@ UnfoldingMap map;
 // Data Files
 String[] schoolInfoDataFile;
 String[] achievementSurveyDataFile;
+String[] gradRateDataFile;
 
 // Visualization vars
 float maxVar, minVar;
@@ -68,8 +71,9 @@ void setup() {
   // Load and crunch CSV file
   schoolInfoDataFile = loadStrings("BCSchoolInfo_10012012.csv");
   achievementSurveyDataFile = loadStrings("AchievementCombinedParentsCurr.csv");
+  gradRateDataFile = loadStrings("FirstTimeG12GradRate-SchoolsOnly_2011-2012.csv");
   processSchoolInfoData(schoolInfoDataFile);
-  processAchieveSurveyData(achievementSurveyDataFile);
+  processGradRateData(gradRateDataFile);
 
   // Init Unfolding Map
   map = new UnfoldingMap(this, new OpenStreetMap.CloudmadeProvider("dcd2157d99f04bbf97922278fd9584b8", 998));
@@ -139,6 +143,10 @@ void updateMarker(Marker m) {
     text(m.getProperties().get("NAME").toString(), mouseX, mouseY);
   }
 }
+
+void addMarkerBySchoolYear(String schoolYear) {
+  
+}
  
  
  
@@ -163,6 +171,38 @@ void processSchoolInfoData(String[] file) {
                               float(row[latColumn]),
                               float(row[lonColumn])
                               );
+  }
+}
+
+// Search graduation rate data and populate school objects with matched info
+void processGradRateData(String[] file) {
+  
+  // pick out column numbers of specific columns
+  String[] columnNames = split(file[0], ",");
+  int qForEachSchool = 4; // how many survey questions are there for each school?
+  int schoolNumberColumn = searchForColumnName("SCHOOL_NUMBER", columnNames);
+  int schoolYearColumn = searchForColumnName("SCHOOL_YEAR", columnNames);
+  int valueColumn = searchForColumnName("MEASURE_VALUE", columnNames);
+    
+  // begin iterating through array of School objects
+  for (int i=0; i < schools.length; i++) {
+    int workingSchoolNumber = schools[i].getSchoolNumber();
+    boolean foundMsk = false;
+    
+    // iterate through each row of input file information
+    for (int j=1; j < file.length; j++) {
+      String[] row = split(file[j], ",");
+      
+      // check if file's school number matches current school
+      if (int(row[schoolNumberColumn]) == workingSchoolNumber) {
+        int value = int(row[valueColumn]);
+        if (value < 0) {
+          schools[i].setGradRate(row[schoolYearColumn], -1);
+        } else {
+          schools[i].setGradRate(row[schoolYearColumn], value);
+        }
+      }
+    }
   }
 }
 
