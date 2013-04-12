@@ -47,6 +47,9 @@ UnfoldingMap map;
 String[] schoolInfoDataFile;
 String[] achievementSurveyDataFile;
 
+// Visualization vars
+float maxVar, minVar;
+
 // Array of School objects
 School[] schools;
 
@@ -57,6 +60,10 @@ School[] schools;
 void setup() {
   // Load up screen
   size(1280, 700, GLConstants.GLGRAPHICS);
+  
+  // init vars
+  maxVar = 0;
+  minVar = 100;
   
   // Load and crunch CSV file
   schoolInfoDataFile = loadStrings("BCSchoolInfo_10012012.csv");
@@ -171,6 +178,7 @@ void processAchieveSurveyData(String[] file) {
   for (int i=0; i < schools.length; i++) {
     int workingSchoolNumber = schools[i].getSchoolNumber();
     int valueTotal = 0;
+    int valueAverage = 0;
     boolean foundMsk = false;
     
     // iterate through each row of input file information
@@ -179,22 +187,25 @@ void processAchieveSurveyData(String[] file) {
       
       // check if file's school number matches current school
       if (int(row[schoolNumberColumn]) == workingSchoolNumber) { 
-        // check if "Msk" is found
-        if (match(row[valueColumn], "Msk") != null) {
-          foundMsk = true;
-        } else {
-          // if Msk not found, proceed with addition
-          valueTotal += int(row[valueColumn]);
-        }
+        valueTotal += int(row[valueColumn]);
       }
-      
-      // if "Msk" found, skip this school
-      if (foundMsk) break;
     }
     
+    // Calculate average of value
+    valueAverage = valueTotal/qForEachSchool;
+    
+    // print(workingSchoolNumber + " : ");
+    // println(valueTotal + "/" + qForEachSchool + " = " + valueAverage);
+    
     // populate School object with average of achievement survey scores
-    schools[i].setAchievementValue(valueTotal/qForEachSchool);
+    schools[i].setAchievementValue(valueAverage);
+    
+    // Update MaxMin Values
+    updateMaxMin(valueAverage);
   }
+  
+  println("Max: " + maxVar);
+  println("Min: " + minVar);
 }
 
 // Searches array for a string, and returns the column number it belongs to
@@ -208,3 +219,17 @@ int searchForColumnName(String name, String[] row) {
   }
   return 99;
 }
+
+// Take input value, and updates max and min values
+void updateMaxMin(float i) {
+    if (i > maxVar) maxVar = i;
+    if (i < minVar) minVar = i;
+}
+
+
+
+/* ==================================================
+ * Getter & Setter Methods
+ * ================================================== */
+float getMaxVar() { return maxVar; };
+float getMinVar() { return minVar; };

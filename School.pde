@@ -53,6 +53,10 @@ public void addMarkerTo(UnfoldingMap map) {
   hm.put("ACHIEVEMENT", getAchievementValue());
   
   marker.setProperties(hm);
+  
+  float colorVar = map(getAchievementValue(), getMinVar(), getMaxVar(), 0, 255);
+  marker.setColor(int(colorVar));
+  
   map.addMarkers(marker);
 }
 
