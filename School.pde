@@ -20,7 +20,7 @@ private String name;
 private int schoolNumber;
 private int achievementSurvey;
 
-// Grad Rate
+// grad rate
 private int[] gradRateValue;
 
 // location data
@@ -51,16 +51,17 @@ School(String name, int number, float lat, float lon) {
 /* ==================================================
  * Rendering Methods
  * ================================================== */
-public void addMarkerTo(UnfoldingMap map) {
+public void addMarkerTo(UnfoldingMap map, int value) {
   hm.put("NAME", getSchoolName());
   hm.put("NUMBER", getSchoolNumber());
   hm.put("LOCATION", getLocation());
-  hm.put("ACHIEVEMENT", getAchievementValue());
+  hm.put("VALUE", value);
   
   marker.setProperties(hm);
   
-  float colorVar = map(getAchievementValue(), getMinVar(), getMaxVar(), 0, 255);
-  marker.setColor(int(colorVar));
+  float colorVar = map(value, getMinVar(), getMaxVar(), 0, 255);
+  marker.setColor(color(0, 0, colorVar));
+  marker.setStrokeWeight(0);
   
   map.addMarkers(marker);
 }

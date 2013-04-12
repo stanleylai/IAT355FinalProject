@@ -51,11 +51,15 @@ String[] achievementSurveyDataFile;
 String[] gradRateDataFile;
 
 // Visualization vars
-float maxVar, minVar;
+int maxVar, minVar;
+int rangeMaxVar, rangeMinVar;
 
 // ControlP5 objects
 ControlP5 cp5;
 RadioButton schoolYearSelect;
+Range filterRange;
+Textlabel schoolNameLabel;
+Textlabel schoolValueLabel;
 
 // Array of School objects
 School[] schools;
@@ -72,10 +76,10 @@ void setup() {
   
   // Load up screen
   size(1280, 700, GLConstants.GLGRAPHICS);
+  background(0);
   
-  // init vars
-  maxVar = 0;
-  minVar = 100;
+  // init max min vars
+  resetMaxMin();
   
   if (renderMarkers) {  // for debug
     // Load and crunch CSV file
@@ -87,19 +91,19 @@ void setup() {
   }
   
   // Init Unfolding Map
-  map = new UnfoldingMap(this, new OpenStreetMap.CloudmadeProvider("dcd2157d99f04bbf97922278fd9584b8", 998));
+  map = new UnfoldingMap(this, 0, 0, 1280, 575, new OpenStreetMap.CloudmadeProvider("dcd2157d99f04bbf97922278fd9584b8", 998));
   map.zoomAndPanTo(new Location(49.21, -122.9), 11); // Position map at Vancouver
   MapUtils.createDefaultEventDispatcher(this, map); // Enable basic user interactions
   map.setTweening(true); // Animate all map movements
   
+  // Add controlP5 filter controls
+  initControlP5();
+  
   if (renderMarkers) {  // for debug
   // Draw school markers.
   // Should always be the last statement, since School class needs to be fully populated with data first
-    addMarkerBySchoolYear("2011/2012");
+    addMarkerBySchoolYearIndex(15);  // School Year 2011/2012
   }
-  
-  // Add controlP5 filter controls
-  initControlP5();
 }
 
 
@@ -111,21 +115,15 @@ void draw() {
   // Redraw Unfolding Map
   map.draw();
   
-  /*
-  // Display co-ordinates at mouse
-  Location pointerLoc = map.getLocation(mouseX, mouseY);
-  fill(255);
-  text(pointerLoc.getLat() + ", " + pointerLoc.getLon(), mouseX, mouseY);
-  */
+  // Draw global UI elements
+  drawUI();
   
+  // Update markers
   if (renderMarkers) {  // for debug
     for (Marker m : map.getMarkers()) {
       updateMarker(m);
     }
   }
-  
-  // Draw global UI elements
-  drawUI();
 }
 
 
@@ -143,6 +141,9 @@ void mouseMoved() {
         for (Marker marker : map.getMarkers()) {
             marker.setSelected(false);
         }
+        // clear text labels
+        schoolNameLabel.setText("");
+        schoolValueLabel.setText("");
     }
 }
  
@@ -151,18 +152,21 @@ void mouseMoved() {
 /* ==================================================
  * Rendering Methods
  * ================================================== */
-// Add all school location markers to map
-void addSchoolMarkers() {
-  for (int i=0; i < schools.length; i++) {
-    schools[i].addMarkerTo(map);
-  }
-}
-
 // Update markers
 void updateMarker(Marker m) {
+  
+  // Iterate through markers and color them according to filter range value
+  int v = Integer.parseInt(m.getProperties().get("VALUE").toString());
+  if (v > rangeMaxVar || v < rangeMinVar) {
+    m.setColor(color(255, 0));  // if out of range, make invisible
+  } else {
+    float colorVar = map(v, minVar, maxVar, 0, 255);
+    m.setColor(color(0, 0, colorVar));
+  }
+  
+  // actions if marker is selected
   if(m.isSelected()) {
-    fill(255);
-    text(m.getProperties().get("NAME").toString(), mouseX, mouseY);
+    drawSchoolInfo(m);
   }
 }
 
@@ -172,18 +176,12 @@ void reloadMarkersBySchoolYearIndex(int i) {
 }
 
 // add marker to map if grad rate values are available for that school year
-void addMarkerBySchoolYear(String schoolYear) {
-  for (int i=0; i < schools.length; i++) {
-    if (schools[i].getGradRate(schoolYear) > 0) {
-      schools[i].addMarkerTo(map);
-    }
-  }
-}
 void addMarkerBySchoolYearIndex(int index) {
+  resetMaxMin();
+  updateMaxMinBySchoolYear(index);
   for (int i=0; i < schools.length; i++) {
-    if (schools[i].getGradRate(index) > 0) {
-      schools[i].addMarkerTo(map);
-    }
+    int j = schools[i].getGradRate(index);
+    if (j > 0) { schools[i].addMarkerTo(map, j); }
   }
 }
 
@@ -193,7 +191,17 @@ void addMarkerBySchoolYearIndex(int index) {
  * ================================================== */
 void drawUI() {
   fill(color(51));
-  rect(0, 600, 1280, 100);
+  rect(0, 575, 1280, 125);
+  fill(180);
+  textSize(13);
+  text("First-Time Grade 12 Graduation Rate in British Columbia", 20, 598);
+}
+
+void drawSchoolInfo(Marker m) {
+  HashMap hm = m.getProperties();
+  String value = hm.get("VALUE").toString() + "%";
+  schoolNameLabel.setText(hm.get("NAME").toString());
+  schoolValueLabel.setText(value);
 }
 
 
@@ -204,7 +212,7 @@ void drawUI() {
 void initControlP5() {
   cp5 = new ControlP5(this);
   schoolYearSelect = cp5.addRadioButton("schoolYearSelect")
-                        .setPosition(20, 630)
+                        .setPosition(20, 640)
                         .setSize(20, 20)
                         .setItemsPerRow(8)
                         .setSpacingColumn(65)
@@ -226,12 +234,31 @@ void initControlP5() {
                         .addItem("2010/2011", 14)
                         .addItem("2011/2012", 15)
                         .activate("2011/2012");
+  filterRange = cp5.addRange("filterRange")
+                   .setBroadcast(false)
+                   .setPosition(20, 610)
+                   .setSize(670, 20)
+                   .setRange(minVar, maxVar)
+                   .setRangeValues(minVar, maxVar)
+                   .setBroadcast(true);
+  schoolNameLabel = cp5.addTextlabel("schoolNameLabel")
+                       .setPosition(1020, 610)
+                       .setFont(createFont("Arial", 12))
+                       .setColorValue(color(150));
+  schoolValueLabel = cp5.addTextlabel("schoolValueLabel")
+                       .setPosition(1020, 630)
+                       .setFont(createFont("Arial", 45))
+                       .setColorValue(color(255));
 }
 
 // CP5 event handler
 void controlEvent(ControlEvent theControlEvent) {
-  if(theControlEvent.isFrom("schoolYearSelect")) {
+  if (theControlEvent.isFrom("schoolYearSelect")) {
     reloadMarkersBySchoolYearIndex(int(theControlEvent.getValue()));
+  }
+  if (theControlEvent.isFrom("filterRange")) {
+    rangeMinVar = int(theControlEvent.getController().getArrayValue(0));
+    rangeMaxVar = int(theControlEvent.getController().getArrayValue(1));
   }
 }
  
@@ -292,48 +319,6 @@ void processGradRateData(String[] file) {
   }
 }
 
-// Search achievement survey data and populate school objects with matched info
-void processAchieveSurveyData(String[] file) {
-  String[] columnNames = split(file[0], ",");
-  
-  int qForEachSchool = 4; // how many survey questions are there for each school?
-  int schoolNumberColumn = searchForColumnName("SCHOOL_NUMBER", columnNames);
-  int valueColumn = searchForColumnName("MANY_OR_ALL_PCT", columnNames);
-    
-  // begin iterating through array of School objects
-  for (int i=0; i < schools.length; i++) {
-    int workingSchoolNumber = schools[i].getSchoolNumber();
-    int valueTotal = 0;
-    int valueAverage = 0;
-    boolean foundMsk = false;
-    
-    // iterate through each row of input file information
-    for (int j=1; j < file.length; j++) {
-      String[] row = split(file[j], ",");
-      
-      // check if file's school number matches current school
-      if (int(row[schoolNumberColumn]) == workingSchoolNumber) { 
-        valueTotal += int(row[valueColumn]);
-      }
-    }
-    
-    // Calculate average of value
-    valueAverage = valueTotal/qForEachSchool;
-    
-    // print(workingSchoolNumber + " : ");
-    // println(valueTotal + "/" + qForEachSchool + " = " + valueAverage);
-    
-    // populate School object with average of achievement survey scores
-    schools[i].setAchievementValue(valueAverage);
-    
-    // Update MaxMin Values
-    updateMaxMin(valueAverage);
-  }
-  
-  println("Max: " + maxVar);
-  println("Min: " + minVar);
-}
-
 // Searches array for a string, and returns the column number it belongs to
 int searchForColumnName(String name, String[] row) {
   // Iterate through provided row
@@ -347,9 +332,21 @@ int searchForColumnName(String name, String[] row) {
 }
 
 // Take input value, and updates max and min values
-void updateMaxMin(float i) {
+void updateMaxMin(int i) {
     if (i > maxVar) maxVar = i;
     if (i < minVar) minVar = i;
+}
+void updateMaxMinBySchoolYear(int index) {
+  for (int i=0; i < schools.length; i++) {
+    if (schools[i].getGradRate(index) > 0) {
+      updateMaxMin(schools[i].getGradRate(index));
+    }
+  }
+  filterRange.setRange(minVar, maxVar).setRangeValues(minVar, maxVar);
+}
+void resetMaxMin() {
+  maxVar = 0;
+  minVar = 100;
 }
 
 
