@@ -53,14 +53,23 @@ String[] gradRateDataFile;
 // Visualization vars
 float maxVar, minVar;
 
+// ControlP5 objects
+ControlP5 cp5;
+RadioButton schoolYearSelect;
+
 // Array of School objects
 School[] schools;
 
+// debug
+Boolean renderMarkers;
 
 /* ==================================================
  * Setup Method
  * ================================================== */
 void setup() {
+  // Set false to prevent file processsing. To allow for quick UI debugging
+  renderMarkers = true;
+  
   // Load up screen
   size(1280, 700, GLConstants.GLGRAPHICS);
   
@@ -68,22 +77,29 @@ void setup() {
   maxVar = 0;
   minVar = 100;
   
-  // Load and crunch CSV file
-  schoolInfoDataFile = loadStrings("BCSchoolInfo_10012012.csv");
-  achievementSurveyDataFile = loadStrings("AchievementCombinedParentsCurr.csv");
-  gradRateDataFile = loadStrings("FirstTimeG12GradRate-SchoolsOnly_2011-2012.csv");
-  processSchoolInfoData(schoolInfoDataFile);
-  processGradRateData(gradRateDataFile);
-
+  if (renderMarkers) {  // for debug
+    // Load and crunch CSV file
+    schoolInfoDataFile = loadStrings("BCSchoolInfo_10012012.csv");
+    achievementSurveyDataFile = loadStrings("AchievementCombinedParentsCurr.csv");
+    gradRateDataFile = loadStrings("FirstTimeG12GradRate-SchoolsOnly_2011-2012.csv");
+    processSchoolInfoData(schoolInfoDataFile);
+    processGradRateData(gradRateDataFile);
+  }
+  
   // Init Unfolding Map
   map = new UnfoldingMap(this, new OpenStreetMap.CloudmadeProvider("dcd2157d99f04bbf97922278fd9584b8", 998));
   map.zoomAndPanTo(new Location(49.21, -122.9), 11); // Position map at Vancouver
   MapUtils.createDefaultEventDispatcher(this, map); // Enable basic user interactions
   map.setTweening(true); // Animate all map movements
   
+  if (renderMarkers) {  // for debug
   // Draw school markers.
   // Should always be the last statement, since School class needs to be fully populated with data first
-  addMarkerBySchoolYear("2011/2012");
+    addMarkerBySchoolYear("2011/2012");
+  }
+  
+  // Add controlP5 filter controls
+  initControlP5();
 }
 
 
@@ -102,9 +118,14 @@ void draw() {
   text(pointerLoc.getLat() + ", " + pointerLoc.getLon(), mouseX, mouseY);
   */
   
-  for (Marker m : map.getMarkers()) {
-    updateMarker(m);
+  if (renderMarkers) {  // for debug
+    for (Marker m : map.getMarkers()) {
+      updateMarker(m);
+    }
   }
+  
+  // Draw global UI elements
+  drawUI();
 }
 
 
@@ -145,6 +166,11 @@ void updateMarker(Marker m) {
   }
 }
 
+void reloadMarkersBySchoolYearIndex(int i) {
+  map.getLastMarkerManager().clearMarkers();
+  addMarkerBySchoolYearIndex(i);
+}
+
 // add marker to map if grad rate values are available for that school year
 void addMarkerBySchoolYear(String schoolYear) {
   for (int i=0; i < schools.length; i++) {
@@ -153,7 +179,61 @@ void addMarkerBySchoolYear(String schoolYear) {
     }
   }
 }
- 
+void addMarkerBySchoolYearIndex(int index) {
+  for (int i=0; i < schools.length; i++) {
+    if (schools[i].getGradRate(index) > 0) {
+      schools[i].addMarkerTo(map);
+    }
+  }
+}
+
+
+/* ==================================================
+ * Rendering Methods
+ * ================================================== */
+void drawUI() {
+  fill(color(51));
+  rect(0, 600, 1280, 100);
+}
+
+
+
+/* ==================================================
+ * ControlP5 Methods
+ * ================================================== */
+void initControlP5() {
+  cp5 = new ControlP5(this);
+  schoolYearSelect = cp5.addRadioButton("schoolYearSelect")
+                        .setPosition(20, 630)
+                        .setSize(20, 20)
+                        .setItemsPerRow(8)
+                        .setSpacingColumn(65)
+                        .setSpacingRow(3)
+                        .addItem("1996/1997", 0)
+                        .addItem("1997/1998", 1)
+                        .addItem("1998/1999", 2)
+                        .addItem("1999/2000", 3)
+                        .addItem("2000/2001", 4)
+                        .addItem("2001/2002", 5)
+                        .addItem("2002/2003", 6)
+                        .addItem("2003/2004", 7)
+                        .addItem("2004/2005", 8)
+                        .addItem("2005/2006", 9)
+                        .addItem("2006/2007", 10)
+                        .addItem("2007/2008", 11)
+                        .addItem("2008/2009", 12)
+                        .addItem("2009/2010", 13)
+                        .addItem("2010/2011", 14)
+                        .addItem("2011/2012", 15)
+                        .activate("2011/2012");
+}
+
+// CP5 event handler
+void controlEvent(ControlEvent theControlEvent) {
+  if(theControlEvent.isFrom("schoolYearSelect")) {
+    reloadMarkersBySchoolYearIndex(int(theControlEvent.getValue()));
+  }
+}
  
  
 /* ==================================================

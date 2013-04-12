@@ -125,6 +125,14 @@ public int getGradRate(String schoolYear) {
   
   return r;
 };
+public int getGradRate(int schoolYearIndex) {
+  int r = gradRateValue[schoolYearIndex];
+  if (r >= 0) {
+    return r;
+  } else {
+    return -1;
+  }
+}
 
 // Achievement Survey
 public void setAchievementValue(int i) { achievementSurvey = i; };
