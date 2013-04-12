@@ -81,8 +81,9 @@ void setup() {
   MapUtils.createDefaultEventDispatcher(this, map); // Enable basic user interactions
   map.setTweening(true); // Animate all map movements
   
-  // Draw school markers. Should always be the last statement, since School class needs to be fully populated with data first
-  addSchoolMarkers();
+  // Draw school markers.
+  // Should always be the last statement, since School class needs to be fully populated with data first
+  addMarkerBySchoolYear("2011/2012");
 }
 
 
@@ -144,8 +145,13 @@ void updateMarker(Marker m) {
   }
 }
 
+// add marker to map if grad rate values are available for that school year
 void addMarkerBySchoolYear(String schoolYear) {
-  
+  for (int i=0; i < schools.length; i++) {
+    if (schools[i].getGradRate(schoolYear) > 0) {
+      schools[i].addMarkerTo(map);
+    }
+  }
 }
  
  
